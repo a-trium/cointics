@@ -1,0 +1,7 @@
+dist/
+vendor/
+*.coverprofile
+debug
+
+.idea/
+*.iml
