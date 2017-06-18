@@ -24,12 +24,12 @@ def lambda_handler(event, context):
         raise Exception("invalid response in coinone ticker api. errorcode is " + ticker["errorCode"])
 
     utcnow = datetime.datetime.utcnow()
-    time_gap = datetime.timedelta(hours=9)
+    time_gap = datetime.timedelta(days=-1, hours=9) # get yesterday's stat
     kor_time = utcnow + time_gap
     date = kor_time.strftime('%Y-%m-%d')
 
     dynamodb = boto3.resource("dynamodb")
-    table = dynamodb.Table("coinone_daily_ticker")
+    table = dynamodb.Table("coinone_market")
 
     for coin in COINS:
         timestamp = int(ticker["timestamp"])
