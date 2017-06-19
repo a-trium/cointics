@@ -1,0 +1,118 @@
+swagger: '2.0'
+info:
+  description: coinone
+  version: "1.0"
+  title: coinone API
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+
+        
+basePath: /api/coinone/1.0
+schemes:
+ - http
+
+tags:
+- name: ticker
+  description: ticker API
+- name: market
+  description: markget (exchange) API 
+
+paths:
+  /api/coinone/1.0/ticker:
+    get:
+      tags:
+      - ticker
+      operationId: coinoneTicker
+      description: |
+        coinone ticker
+      produces:
+      - application/json
+      parameters:
+      - in: query
+        name: coin
+        description: pass coin name ('btc', 'eth', 'etc', 'xrp')
+        required: true
+        type: string
+      - in: query
+        name: limit
+        description: maximum number of results to return
+        required: false
+        type: integer
+        format: int32
+      responses:
+        200:
+          description: search results matching criteria
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/TickerItem'
+        400:
+          description: bad input parameter
+  /api/coinone/1.0/market:
+    get:
+      tags:
+      - market
+      operationId: coinoneMarket
+      description: |
+        coinone market
+      produces:
+      - application/json
+      parameters:
+      - in: query
+        name: from
+        description: date (GMT+9, 'YYYY-mm-dd') 
+        type: string
+        format: date
+        required: true
+      - in: query
+        name: to
+        description: date (GMT+9, 'YYYY-mm-dd') 
+        type: string
+        format: date
+        required: true
+      responses:
+        200:
+          description: search results matching criteria
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/MarketItem'
+        400:
+          description: bad input parameter          
+
+definitions:
+  TickerItem:
+    type: object
+    required:
+    - coin
+    - timestamp
+    - price_krw
+    properties:
+      coin:
+        type: string
+      timestamp:
+        type: integer
+        format: int64
+      price_krw:
+        type: string
+  MarketItem:
+    required:
+    - coin
+    - date
+    - high_krw
+    - low_krw
+    - volumn
+    properties:
+      coin:
+        type: string
+      date:
+        type: string
+        format: date
+      high_krw:
+        type: string
+      low_krw:
+        type: string
+      volumn:
+        type: number
+        format: double
