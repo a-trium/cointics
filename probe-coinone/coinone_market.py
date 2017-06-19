@@ -1,8 +1,16 @@
 import boto3
 from botocore.vendored import requests
-import __main__ as main
-import datetime
+from datetime import datetime, timedelta, time
 from decimal import *
+import __main__ as main
+import logging
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+isTest = main.__file__.endswith(".test.py")
+
+if isTest:
+    logger.addHandler(logging.StreamHandler())
 
 API_CURRENCY= "https://api.coinone.co.kr/currency"
 API_TICKER = "https://api.coinone.co.kr/ticker?currency=all"
@@ -23,30 +31,29 @@ def lambda_handler(event, context):
     if ticker["result"] != "success":
         raise Exception("invalid response in coinone ticker api. errorcode is " + ticker["errorCode"])
 
-    utcnow = datetime.datetime.utcnow()
-    time_gap = datetime.timedelta(days=-1, hours=9) # get yesterday's stat
-    kor_time = utcnow + time_gap
-    date = kor_time.strftime('%Y-%m-%d')
+    utcnow = datetime.utcnow()
+    dtKstNow = utcnow + timedelta(days=-1, hours=9) # get yesterday's (KST) stat
+    dKst = dtKstNow.date()
+    dtKstZeroTime = datetime.combine(dtKstNow, time.min)
+    tsKstZeroTime = int(dtKstZeroTime.timestamp())
 
     dynamodb = boto3.resource("dynamodb")
     table = dynamodb.Table("coinone_market")
 
     for coin in COINS:
-        timestamp = int(ticker["timestamp"])
         first_krw = ticker[coin]["first"]
         last_krw = ticker[coin]["last"]
         high_krw = ticker[coin]["high"]
         low_krw = ticker[coin]["low"]
         volume = Decimal(ticker[coin]["volume"])
 
-        isTest = main.__file__.endswith(".test.py")
         if isTest is not True:
 
             table.put_item(
                 Item={
                     "coin": coin,
-                    "date": date,
-                    "timestamp": timestamp,
+                    "date": dKst,
+                    "timestamp": tsKstZeroTime,
                     "first_krw": first_krw,
                     "last_krw": last_krw,
                     "high_krw": high_krw,
@@ -56,7 +63,9 @@ def lambda_handler(event, context):
                 }
             )
 
-        print("coinone", date, timestamp, first_krw, last_krw, high_krw, low_krw, volume, usd_to_krw)
+        logger.info("date:{} timestamp:{} first_krw:{} last_krw:{} high_krw:{} low_krw:{} volumn:{} usd_to_krw:{}".format(
+            dKst, tsKstZeroTime, first_krw, last_krw, high_krw, low_krw, volume, usd_to_krw
+        ))
 
 
 
