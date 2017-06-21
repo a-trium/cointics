@@ -33,7 +33,7 @@ def lambda_handler(event, context):
 
     utcnow = datetime.utcnow()
     dtKstNow = utcnow + timedelta(days=-1, hours=9) # get yesterday's (KST) stat
-    dKst = dtKstNow.date()
+    dKst = str(dtKstNow.date())
     dtKstZeroTime = datetime.combine(dtKstNow, time.min)
     tsKstZeroTime = int(dtKstZeroTime.timestamp())
 
