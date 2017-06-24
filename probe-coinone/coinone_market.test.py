@@ -1,4 +1,5 @@
 import coinone_market
 
-coinone_market.lambda_handler(None, None)
+event = { "isTest": True, }
+coinone_market.lambda_handler(event, None)
 
