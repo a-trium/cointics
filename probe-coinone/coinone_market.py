@@ -66,15 +66,15 @@ def lambda_handler(event, context):
         low_krw = ticker[coin]["low"]
         volume = Decimal(ticker[coin]["volume"])
 
-        logger.info("first_krw:{} last_krw:{} high_krw:{} low_krw:{} volumn:{} usd_to_krw:{}".format(
-            first_krw, last_krw, high_krw, low_krw, volume, usd_to_krw
+        logger.info("coin:{} first_krw:{} last_krw:{} high_krw:{} low_krw:{} volumn:{} usd_to_krw:{}".format(
+            coin.upper(), first_krw, last_krw, high_krw, low_krw, volume, usd_to_krw
         ))
 
         if isTest is not True:
 
             table.put_item(
                 Item={
-                    "coin": coin,
+                    "coin": coin.upper(),
                     "date_kst": dKst,
                     "timestamp": Decimal(ts),
                     "first_krw": first_krw,

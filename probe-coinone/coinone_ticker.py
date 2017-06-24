@@ -43,13 +43,13 @@ def lambda_handler(event, context):
         price_krw = ticker[coin]["last"]
 
         logger.info("coin:{} timestamp:{}, price_krw:{}".format(
-            coin, timestamp, price_krw
+            coin.upper(), timestamp, price_krw
         ))
 
         if isTest is not True:
             table.put_item(
                 Item={
-                    "coin": coin,
+                    "coin": coin.upper(),
                     "timestamp": timestamp,
                     "date_kst": dKst,
                     "price_krw": price_krw,
