@@ -35,9 +35,9 @@ def get_datetime_kst_now():
     return datetime.now(timezone.utc).astimezone(tz.gettz("Asia/Seoul"))
 
 
-def get_datetime_kst_yesterday(dtKst):
+def get_datetime_kst_2days_ago(dtKst):
     dtKst = dtKst.replace(hour=0, minute=0, second=0, microsecond=0)
-    dtKst += timedelta(days=-1)
+    dtKst += timedelta(days=-2)
     return dtKst
 
 
@@ -54,32 +54,30 @@ def lambda_handler(event, context):
         logger.addHandler(logging.StreamHandler())
 
     # build datetime: batch job for yesterday
-    dtKstNow = get_datetime_kst_now()
-    dtKstFrom = get_datetime_kst_yesterday(dtKstNow)
-
+    dtKstStart = get_datetime_kst_now()
     if isTest:
-        dStrKstFrom = event["testParams"]["dStrKstFrom"]
-        dtKstFrom = datetime.strptime(dStrKstFrom, "%Y-%m-%d").replace(
-            tzinfo=tz.gettz("Asia/Seoul"), minute=0, second=0, microsecond=0)
+        dStrKstStart = event["testParams"]["dStrKstStart"]
+        dtKstStart = datetime.strptime(dStrKstStart, "%Y-%m-%d").replace(
+            tzinfo=tz.gettz("Asia/Seoul"))
 
+    dtKstFrom = get_datetime_kst_2days_ago(dtKstStart)
+    tsKstFrom = dtKstFrom.timestamp()
+    dKstFrom = dtKstFrom.date()
     dtKstUntil = dtKstFrom + timedelta(days=+1)
     tsKstUntil = dtKstUntil.timestamp()
-    tsKstFrom = dtKstFrom.timestamp()
+    dKstUntil = dtKstUntil.date()
 
-    dKstFrom = dtKstFrom.strftime('%Y-%m-%d')
-    dKstUntil = dtKstUntil.strftime('%Y-%m-%d')
-
-    logger.info("dtKstFrom :{} dtKstUntil:{} tsKstFrom:{} tsKstUntil:{}".format(
-        dtKstFrom, dtKstUntil, tsKstFrom, tsKstUntil))
+    logger.info("dtKstStart:{} dtKstFrom :{} dtKstUntil:{} dKstFrom:{} dKstUntil:{} tsKstFrom:{} tsKstUntil:{}".format(
+        dtKstStart, dtKstFrom, dtKstUntil, dKstFrom, dKstUntil, tsKstFrom, tsKstUntil))
 
     # get rows
     dynamodb = boto3.resource("dynamodb")
     table = dynamodb.Table("coinone_ticker")
 
     result = table.scan(
-        ProjectionExpression="#ts, #dt, coin, price_krw",
-        ExpressionAttributeNames={ "#dt": "date" , "#ts": "timestamp", },
-        FilterExpression=Key('timestamp').gte(Decimal(tsKstFrom)) & Key('timestamp').lt(Decimal(tsKstUntil)),
+        ProjectionExpression="#ts, date_kst, coin, price_krw",
+        ExpressionAttributeNames={ "#ts": "timestamp", },
+        FilterExpression=Key("timestamp").gte(Decimal(tsKstFrom)) & Key("timestamp").lt(Decimal(tsKstUntil)),
     )
 
     logger.info("Count:{} ScannedCount:{} HTTPStatusCode:{}".format(
@@ -121,14 +119,13 @@ def lambda_handler(event, context):
     # isTest = False
 
     # store rows into s3
-    bucketPath = "coinone_ticker/{dt:%Y}/{dt:%m}/{dt:%d}/log.tsv".format(dt=dKstFrom)
+    bucketPath = "coinone_ticker/{dt:%Y}-{dt:%m}-{dt:%d}/log.tsv".format(dt=dKstFrom)
     if isTest:
         bucketPath = "test/coineone_ticker_{dt:%Y}-{dt:%m}-{dt:%d}.tsv".format(dt=dKstFrom)
     logger.info("bucketPath:{}".format(bucketPath))
 
     s3 = boto3.resource('s3')
-    s3.Object("hamburg-s3", bucketPath).put(Body=open(tmpFileName, "rb"))
-    return
+    s3.Object("hamburg-ticker", bucketPath).put(Body=open(tmpFileName, "rb"))
 
     if isTest is not True:
         logger.info("Deleting table from {} until {} (KST)".format(dKstFrom, dKstUntil))
