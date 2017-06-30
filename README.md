@@ -18,6 +18,7 @@ Toy Project
 | *-schema | scripts for creating s3 buckets, dynamo tables, and so on |
 | transfer | backup lambda funcs from dynamo to s3 |
 | api | api gateway conf, lambda funcs |  
+| webapp | web application |  
 
 ## Requirements
 
@@ -25,4 +26,3 @@ Toy Project
 | --- | --- |
 | Python | 3.6.1+ |
 | Node | 6.9.0+ |
-
